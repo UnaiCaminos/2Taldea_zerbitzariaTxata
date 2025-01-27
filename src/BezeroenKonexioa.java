@@ -1,5 +1,3 @@
-package com.example.zerbitzaratxata;
-
 import java.io.IOException;
 
 public class BezeroenKonexioa extends Thread {
