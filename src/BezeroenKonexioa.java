@@ -16,17 +16,17 @@ public class BezeroenKonexioa extends Thread {
     @Override
     public void run() {
         try {
-            bezero.sendMessage("Kaixo ongi etorri gure mezularitza zerbitzura!");
 
             while (bezero.konektatutaDago()) {
                 String mezua = bezero.readMessage();
+                System.out.println(mezua);
                 if (mezua == null || mezua.trim().isEmpty()) {
                     continue; // Skip empty messages
                 }
                 zerbitzaria.bidaliMezuaDenei(mezua);
             }
         } catch (IOException e) {
-            System.err.println("Errore bat gertatu da bezeroaren komunikazioan: " + e.getMessage());
+            System.err.println("Bezeroa deskonektatu da");
         } finally {
             try {
                 bezero.closeConnection();
