@@ -82,14 +82,7 @@ public class Zerbitzaria {
             guardarMensajes(); // Persistir mensajes
         }
 
-        // Enviar el mensaje a todos los clientes conectados
-        for (Bezeroa bezero : bezeroak) {
-            try {
-                bezero.sendMessage(mezua);
-            } catch (Exception e) {
-                System.err.println("Error al enviar mensaje a un cliente: " + e.getMessage());
-            }
-        }
+
     }
 
     // Método para guardar los mensajes en un archivo
