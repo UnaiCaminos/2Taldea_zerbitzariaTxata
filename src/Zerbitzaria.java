@@ -29,6 +29,25 @@ public class Zerbitzaria {
         } else {
             throw new IllegalStateException("El servidor ya está iniciado.");
         }
+
+        // Iniciar un hilo para aceptar conexiones de clientes sin detener la ejecución
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Socket bezeroSocket = socket.accept(); // Esperar un nuevo cliente
+                    Bezeroa bezero = new Bezeroa(bezeroSocket);
+                    gehituBezeroa(bezero);
+
+                    // Crear una nueva conexión para manejar la comunicación con el cliente
+                    BezeroenKonexioa bezeroKonexioa = new BezeroenKonexioa(bezero, this);
+                    bezeroKonexioa.start();
+
+                    System.out.println("Nuevo cliente conectado.");
+                } catch (IOException e) {
+                    System.err.println("Error aceptando conexiones: " + e.getMessage());
+                }
+            }
+        }).start(); // Iniciar el hilo en segundo plano
     }
 
     public void itxi() throws IOException {
