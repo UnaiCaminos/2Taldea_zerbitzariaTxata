@@ -18,13 +18,6 @@ public class BezeroenKonexioa extends Thread {
     @Override
     public void run() {
         try {
-            // Enviar un mensaje de bienvenida
-            bezero.sendMessage("Kaixo ongi etorri gure mezularitza zerbitzura!");
-
-            // Enviar los mensajes anteriores almacenados al cliente si existen
-            for (String mensaje : bezero.getMensajes()) {
-                bezero.sendMessage(mensaje);  // Envía cada mensaje almacenado previamente
-            }
 
             // Loop principal para recibir y enviar mensajes
             while (bezero.konektatutaDago()) {
@@ -32,17 +25,18 @@ public class BezeroenKonexioa extends Thread {
                 if (mezua == null || mezua.trim().isEmpty()) {
                     continue; // Skip empty messages
                 }
-                zerbitzaria.bidaliMezuaDenei(mezua);  // Enviar el mensaje a todos los clientes
+                // Enviar el mensaje a todos los clientes menos al que lo envió
+                zerbitzaria.bidaliMezuaDenei(mezua, bezero);  // Aquí pasamos el cliente que envió el mensaje
             }
-
         } catch (IOException e) {
-            System.err.println("Errore bat gertatu da bezeroaren komunikazioan: " + e.getMessage());
+            System.err.println("Bezeroa deskonektatu da");
         } finally {
             try {
-                bezero.closeConnection();  // Cerrar la conexión cuando el cliente se desconecta
+                bezero.closeConnection();
             } catch (IOException e) {
                 System.err.println("Errorea konexioa istean: " + e.getMessage());
             }
         }
     }
 }
+

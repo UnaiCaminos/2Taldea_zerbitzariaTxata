@@ -1,9 +1,6 @@
 package com.example.zerbitzaratxata;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +28,7 @@ public class Bezeroa {
 
     public void sendMessage(String message) {
         if (message == null || message.isEmpty()) {
-            throw new IllegalArgumentException("Mensajea ezin da hutsik egon.");
+            throw new IllegalArgumentException("Mezua ezin da hutsik egon.");
         }
         out.println(message);  // Enviar el mensaje al cliente
         mensajes.add(message);  // Guardarlo en la lista de mensajes
@@ -51,5 +48,32 @@ public class Bezeroa {
     // Método para obtener los mensajes almacenados
     public List<String> getMensajes() {
         return new ArrayList<>(mensajes);
+    }
+
+    // Método para enviar un archivo al cliente
+    public void sendFile(byte[] fileData, String fileName) throws IOException {
+        if (fileData == null || fileData.length == 0) {
+            throw new IllegalArgumentException("Fitxategia ezin da hutsik egon.");
+        }
+
+        // Enviar el nombre del archivo
+        out.println(fileName);
+
+        // Enviar el tamaño del archivo
+        out.println(fileData.length);
+
+        // Enviar los bytes del archivo en bloques de 1024 bytes (puedes ajustar el tamaño)
+        OutputStream outputStream = socket.getOutputStream();
+        int offset = 0;
+        int chunkSize = 1024;
+        while (offset < fileData.length) {
+            int remaining = fileData.length - offset;
+            int sizeToSend = Math.min(remaining, chunkSize);
+            outputStream.write(fileData, offset, sizeToSend);
+            offset += sizeToSend;
+        }
+
+        // Asegurarse de que el archivo se haya enviado completamente
+        outputStream.flush();
     }
 }
