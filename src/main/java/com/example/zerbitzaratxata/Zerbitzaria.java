@@ -13,7 +13,7 @@ public class Zerbitzaria {
     private final List<Bezeroa> bezeroak;
     private final List<String> mensajes;
     private final String archivoMensajes = "mensajes.ser";
-    private final String carpetaArchivos = "archivos"; // Carpeta donde guardaremos los archivos
+    private final String carpetaArchivos = "Fitxategiak";
 
     public Zerbitzaria(int puerto) {
         if (puerto <= 0 || puerto > 65535) {
@@ -25,11 +25,18 @@ public class Zerbitzaria {
         crearCarpetaArchivos();
     }
 
+    private void crearCarpetaArchivos() {
+        File carpeta = new File(carpetaArchivos);
+        if (!carpeta.exists()) {
+            carpeta.mkdirs();
+        }
+    }
+
     public void hasi() throws IOException {
         if (socket == null || socket.isClosed()) {
             socket = new ServerSocket(puerto);
             System.out.println("Zerbitzaria iniziatu den portua: " + puerto);
-            System.out.println("Mensajes guardados: " + mensajes);
+            System.out.println("Gordetako mezuak: " + mensajes);
         } else {
             throw new IllegalStateException("Zerbitzaria martxan dago.");
         }
@@ -80,35 +87,36 @@ public class Zerbitzaria {
         }
     }
 
-    public void bidaliMezuaDenei(String mezua, Bezeroa sender) {
-        if (mezua == null || mezua.trim().isEmpty()) {
-            System.err.println("Mezua ezin da hutsik egon edo null izan.");
-            return;
-        }
+public void bidaliMezuaDenei(String mezua, Bezeroa sender) {
+    if (mezua == null || mezua.trim().isEmpty()) {
+        System.err.println("Mezua ezin da hutsik egon edo null izan.");
+        return;
+    }
 
-        // Evitar guardar mensajes duplicados en la lista
-        synchronized (mensajes) {
-            if (!mensajes.contains(mezua)) {  // Verifica si el mensaje ya existe
-                if (!mezua.startsWith("[FILE]") && mezua.length() < 500) {
-                    mensajes.add(mezua);
-                }
-                guardarMensajes(); // Solo guarda si el mensaje es nuevo
+    // Evitar guardar mensajes duplicados en la lista
+    synchronized (mensajes) {
+        if (!mensajes.contains(mezua)) {  // Verifica si el mensaje ya existe
+            if (!mezua.startsWith("[FILE]") && mezua.length() < 500) {
+                mensajes.add(mezua);
             }
-        }
-
-        // Enviar el mensaje a todos los clientes, EXCEPTO al remitente
-        for (Bezeroa bezero : bezeroak) {
-            if (!bezero.equals(sender)) {
-                try {
-                    bezero.sendMessage(mezua);
-                } catch (Exception e) {
-                    System.err.println("Arazoa bezeroei mezua bidaltzerakoan: " + e.getMessage());
-                }
-            }
+            guardarMensajes(); // Solo guarda si el mensaje es nuevo
         }
     }
 
-    // Método para guardar los mensajes en un archivo
+    // Enviar el mensaje a todos los clientes, EXCEPTO al remitente
+    for (Bezeroa bezero : bezeroak) {
+        if (!bezero.equals(sender)) {
+            try {
+                bezero.sendMessage(mezua);
+            } catch (Exception e) {
+                System.err.println("Arazoa bezeroei mezua bidaltzerakoan: " + e.getMessage());
+            }
+        }
+    }
+}
+
+
+// Método para guardar los mensajes en un archivo
     private void guardarMensajes() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivoMensajes))) {
             oos.writeObject(mensajes);
@@ -131,64 +139,21 @@ public class Zerbitzaria {
         }
     }
 
-    // Método para crear la carpeta donde se guardarán los archivos si no existe
-    private void crearCarpetaArchivos() {
-        File carpeta = new File(carpetaArchivos);
-        if (!carpeta.exists()) {
-            carpeta.mkdirs();  // Crea la carpeta si no existe
-        }
-    }
-
-    // Método para guardar un archivo en el servidor (solo en la carpeta de archivos)
-    public String guardarArchivo(byte[] datosArchivo, String nombreArchivo) throws IOException {
-        // Asegúrate de que la carpeta de archivos existe
-        File carpeta = new File(carpetaArchivos);
-        if (!carpeta.exists()) {
-            carpeta.mkdirs();  // Crear la carpeta si no existe
-        }
-
-        // Crear la ruta completa para el archivo dentro de la carpeta
-        File archivo = new File(carpetaArchivos + File.separator + nombreArchivo);
-
-        // Guardar el archivo en la ubicación correcta
-        try (FileOutputStream fos = new FileOutputStream(archivo)) {
-            fos.write(datosArchivo);
-        }
-
-        // Retornar la ruta absoluta del archivo
-        return archivo.getAbsolutePath();
-    }
-
-
-    // Método para enviar un archivo a un cliente
-    public void enviarArchivoACliente(String rutaArchivo, Bezeroa cliente) {
+    public void manejarArchivoRecibido(byte[] datosArchivo, String nombreArchivo, Bezeroa sender) {
         try {
-            File archivo = new File(rutaArchivo);
-            byte[] archivoBytes = new byte[(int) archivo.length()];
-            try (FileInputStream fis = new FileInputStream(archivo)) {
-                fis.read(archivoBytes);
+            // Guardar archivo en servidor
+            File archivo = new File(carpetaArchivos + File.separator + nombreArchivo);
+            try (FileOutputStream fos = new FileOutputStream(archivo)) {
+                fos.write(datosArchivo);
             }
 
-            cliente.sendFile(archivoBytes, archivo.getName());
+            // Notificar a todos los clientes
+            String notificacion = "[FITXATEGIA] bidali da: " + nombreArchivo;
+            bidaliMezuaDenei(notificacion, sender);
         } catch (IOException e) {
-            System.err.println("Errorea fitxategia bidaltzerakoan: " + e.getMessage());
-        }
-    }
-
-    // Método para manejar la recepción de archivos de un cliente
-    public void recibirArchivo(byte[] datosArchivo, String nombreArchivo, Bezeroa sender) {
-        try {
-            // Usar el método guardarArchivo para guardar el archivo en la carpeta correcta
-            String archivoRuta = guardarArchivo(datosArchivo, nombreArchivo);
-            System.out.println("Archivo recibido y guardado en: " + archivoRuta);
-
-            // Notificar a todos los clientes que se ha recibido un archivo
-            bidaliMezuaDenei("Un nuevo archivo ha sido recibido: " + nombreArchivo, sender);
-        } catch (IOException e) {
-            System.err.println("Error al guardar el archivo recibido: " + e.getMessage());
+            System.err.println("Arazoa fitxategia gordetzean: " + e.getMessage());
         }
     }
 }
-
 
 

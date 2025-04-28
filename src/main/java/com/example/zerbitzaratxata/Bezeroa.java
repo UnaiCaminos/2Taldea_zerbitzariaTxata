@@ -6,11 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Bezeroa {
-
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private List<String> mensajes;  // Lista para almacenar los mensajes
+    private DataInputStream dataIn;
+    private DataOutputStream dataOut;
+    private List<String> mensajes;
 
     public Bezeroa(Socket socket) throws IOException {
         if (socket == null || socket.isClosed()) {
@@ -19,7 +20,9 @@ public class Bezeroa {
         this.socket = socket;
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new PrintWriter(socket.getOutputStream(), true);
-        this.mensajes = new ArrayList<>();  // Inicializar lista de mensajes
+        this.dataIn = new DataInputStream(socket.getInputStream());
+        this.dataOut = new DataOutputStream(socket.getOutputStream());
+        this.mensajes = new ArrayList<>();
     }
 
     public boolean konektatutaDago() {
@@ -30,8 +33,8 @@ public class Bezeroa {
         if (message == null || message.isEmpty()) {
             throw new IllegalArgumentException("Mezua ezin da hutsik egon.");
         }
-        out.println(message);  // Enviar el mensaje al cliente
-        mensajes.add(message);  // Guardarlo en la lista de mensajes
+        out.println(message);
+        mensajes.add(message);
     }
 
     public String readMessage() throws IOException {
@@ -41,39 +44,23 @@ public class Bezeroa {
     public void closeConnection() throws IOException {
         if (!socket.isClosed()) {
             socket.close();
-            mensajes.clear();  // Eliminar todos los mensajes cuando la conexión se cierre
+            mensajes.clear();
         }
     }
 
-    // Método para obtener los mensajes almacenados
     public List<String> getMensajes() {
         return new ArrayList<>(mensajes);
     }
 
-    // Método para enviar un archivo al cliente
-    public void sendFile(byte[] fileData, String fileName) throws IOException {
-        if (fileData == null || fileData.length == 0) {
-            throw new IllegalArgumentException("Fitxategia ezin da hutsik egon.");
-        }
+    public DataInputStream getDataIn() {
+        return dataIn;
+    }
 
-        // Enviar el nombre del archivo
-        out.println(fileName);
+    public DataOutputStream getDataOut() {
+        return dataOut;
+    }
 
-        // Enviar el tamaño del archivo
-        out.println(fileData.length);
-
-        // Enviar los bytes del archivo en bloques de 1024 bytes (puedes ajustar el tamaño)
-        OutputStream outputStream = socket.getOutputStream();
-        int offset = 0;
-        int chunkSize = 1024;
-        while (offset < fileData.length) {
-            int remaining = fileData.length - offset;
-            int sizeToSend = Math.min(remaining, chunkSize);
-            outputStream.write(fileData, offset, sizeToSend);
-            offset += sizeToSend;
-        }
-
-        // Asegurarse de que el archivo se haya enviado completamente
-        outputStream.flush();
+    public Socket getSocket() {
+        return socket;
     }
 }
