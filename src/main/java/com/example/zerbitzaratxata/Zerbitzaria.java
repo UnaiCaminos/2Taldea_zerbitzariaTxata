@@ -13,7 +13,6 @@ public class Zerbitzaria {
     private final List<Bezeroa> bezeroak;
     private final List<String> mensajes;
     private final String archivoMensajes = "mensajes.ser";
-    private final String carpetaArchivos = "Fitxategiak";
 
     public Zerbitzaria(int puerto) {
         if (puerto <= 0 || puerto > 65535) {
@@ -22,14 +21,6 @@ public class Zerbitzaria {
         this.puerto = puerto;
         this.bezeroak = new CopyOnWriteArrayList<>();
         this.mensajes = cargarMensajes();
-        crearCarpetaArchivos();
-    }
-
-    private void crearCarpetaArchivos() {
-        File carpeta = new File(carpetaArchivos);
-        if (!carpeta.exists()) {
-            carpeta.mkdirs();
-        }
     }
 
     public void hasi() throws IOException {
@@ -95,12 +86,12 @@ public void bidaliMezuaDenei(String mezua, Bezeroa sender) {
 
     // Evitar guardar mensajes duplicados en la lista
     synchronized (mensajes) {
-        if (!mensajes.contains(mezua)) {  // Verifica si el mensaje ya existe
+
             if (!mezua.startsWith("[FILE]") && mezua.length() < 500) {
                 mensajes.add(mezua);
             }
-            guardarMensajes(); // Solo guarda si el mensaje es nuevo
-        }
+            guardarMensajes();
+
     }
 
     // Enviar el mensaje a todos los clientes, EXCEPTO al remitente
@@ -136,22 +127,6 @@ public void bidaliMezuaDenei(String mezua, Bezeroa sender) {
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Arzaoa mezua kargatzean: " + e.getMessage());
             return new ArrayList<>();
-        }
-    }
-
-    public void manejarArchivoRecibido(byte[] datosArchivo, String nombreArchivo, Bezeroa sender) {
-        try {
-            // Guardar archivo en servidor
-            File archivo = new File(carpetaArchivos + File.separator + nombreArchivo);
-            try (FileOutputStream fos = new FileOutputStream(archivo)) {
-                fos.write(datosArchivo);
-            }
-
-            // Notificar a todos los clientes
-            String notificacion = "[FITXATEGIA] bidali da: " + nombreArchivo;
-            bidaliMezuaDenei(notificacion, sender);
-        } catch (IOException e) {
-            System.err.println("Arazoa fitxategia gordetzean: " + e.getMessage());
         }
     }
 }
