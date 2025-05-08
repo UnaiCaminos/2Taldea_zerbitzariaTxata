@@ -120,13 +120,13 @@ public void bidaliMezuaDenei(String mezua, Bezeroa sender) {
     private List<String> cargarMensajes() {
         File archivo = new File(archivoMensajes);
         if (!archivo.exists()) {
-            return new ArrayList<>();
+            return new ArrayList<String>();
         }
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivoMensajes))) {
             return (List<String>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Arzaoa mezua kargatzean: " + e.getMessage());
-            return new ArrayList<>();
+            return new ArrayList<String>();
         }
     }
 }

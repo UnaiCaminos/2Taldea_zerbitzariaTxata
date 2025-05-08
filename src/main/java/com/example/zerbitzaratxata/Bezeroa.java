@@ -22,7 +22,7 @@ public class Bezeroa {
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.dataIn = new DataInputStream(socket.getInputStream());
         this.dataOut = new DataOutputStream(socket.getOutputStream());
-        this.mensajes = new ArrayList<>();
+        this.mensajes = new ArrayList<String>();
     }
 
     public boolean konektatutaDago() {
@@ -49,7 +49,7 @@ public class Bezeroa {
     }
 
     public List<String> getMensajes() {
-        return new ArrayList<>(mensajes);
+        return new ArrayList<String>(mensajes);
     }
 
     public DataInputStream getDataIn() {
